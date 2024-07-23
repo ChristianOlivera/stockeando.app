@@ -19,6 +19,7 @@ app.use(cors({
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'upload')));
 
 app.get('/ping', async (req, res) => {
     const [result] = await pool.query(`SELECT "hello world" as RESULT`)
@@ -33,7 +34,7 @@ app.get('/products', async (req, res) => {
 
 app.post('/products', upload.single('image'), async (req, res) => {
     const { name, category, stock, price, description } = req.body;
-    const imagePath = req.file ? `/img/${req.file.filename}` : null;
+    const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
     try {
         const [result] = await pool.query('INSERT INTO products (name, category, stock, price, description, image) VALUES (?, ?, ?, ?, ?, ?)', [name, category, stock, price, description, imagePath]);
