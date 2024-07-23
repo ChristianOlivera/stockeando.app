@@ -4,10 +4,16 @@ import { pool } from './db.js'
 import { PORT } from './config.js'
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const imgDir = path.join(__dirname, 'public/img');
+if (!fs.existsSync(imgDir)) {
+    fs.mkdirSync(imgDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
     destination: path.join(__dirname, 'public/img'),
