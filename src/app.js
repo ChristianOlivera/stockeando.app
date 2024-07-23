@@ -2,14 +2,21 @@ import express from 'express'
 import cors from 'cors'
 import { pool } from './db.js'
 import { PORT } from './config.js'
-import upload from './multer.js'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import multer from 'multer';
+import path from 'path';
 
 const app = express()
+
+
+const storage = multer.diskStorage({
+    destination: path.join(__dirname, 'public/uploads'),
+    filename: function (req, file, cb) {
+        const extension = path.extname(file.originalname);
+        const filename = Date.now() + extension;
+        cb(null, filename);
+    }
+});
+const upload = multer({ storage: storage });
 
 app.use(cors({
     origin: 'http://localhost:8080',
@@ -19,7 +26,7 @@ app.use(cors({
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/upload', express.static(path.join(__dirname, 'upload')));
+
 
 app.get('/ping', async (req, res) => {
     const [result] = await pool.query(`SELECT "hello world" as RESULT`)
@@ -32,34 +39,18 @@ app.get('/products', async (req, res) => {
     res.json(rows)
 })
 
-app.post('/products', async (req, res) => {
+app.post('/products', upload.single('image'), async (req, res) => {
     const { name, category, stock, price, description } = req.body;
-  
+    const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+
     try {
-      const [result] = await pool.query('INSERT INTO products (name, category, stock, price, description) VALUES (?, ?, ?, ?, ?)', [name, category, stock, price, description]);
-      res.json({ id: result.insertId, name, category, stock, price, description });
+        const [result] = await pool.query('INSERT INTO products (name, category, stock, price, description, image) VALUES (?, ?, ?, ?, ?, ?)', [name, category, stock, price, description, imagePath]);
+        res.json({ id: result.insertId, name, category, stock, price, description, image: imagePath });
     } catch (error) {
-      console.error('Error:', error);
-      res.status(500).json({ message: 'Error al crear el producto' });
+        console.error('Error:', error);
+        res.status(500).json({ message: 'Error al crear el producto' });
     }
-  });
-  
-  app.post('/upload', upload.single('image'), async (req, res) => {
-    const { productId } = req.body;
-    const imagePath = req.file ? `/upload/${req.file.filename}` : null;
-  
-    if (!imagePath) {
-      return res.status(400).json({ message: 'No se subió ninguna imagen' });
-    }
-  
-    try {
-      const [result] = await pool.query('UPDATE products SET image = ? WHERE id = ?', [imagePath, productId]);
-      res.json({ message: 'Imagen subida y ruta guardada', imagePath });
-    } catch (error) {
-      console.error('Error:', error);
-      res.status(500).json({ message: 'Error al subir la imagen' });
-    }
-  });
+});
 
 app.get('/products/:id', async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [req.params.id])
