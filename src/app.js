@@ -19,7 +19,7 @@ app.use(cors({
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'upload')));
+app.use('/upload', express.static(path.join(__dirname, 'upload')));
 
 app.get('/ping', async (req, res) => {
     const [result] = await pool.query(`SELECT "hello world" as RESULT`)
@@ -32,18 +32,34 @@ app.get('/products', async (req, res) => {
     res.json(rows)
 })
 
-app.post('/products', upload.single('image'), async (req, res) => {
+app.post('/products', async (req, res) => {
     const { name, category, stock, price, description } = req.body;
-    const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
-
+  
     try {
-        const [result] = await pool.query('INSERT INTO products (name, category, stock, price, description, image) VALUES (?, ?, ?, ?, ?, ?)', [name, category, stock, price, description, imagePath]);
-        res.json({ id: result.insertId, name, category, stock, price, description, image: imagePath });
+      const [result] = await pool.query('INSERT INTO products (name, category, stock, price, description) VALUES (?, ?, ?, ?, ?)', [name, category, stock, price, description]);
+      res.json({ id: result.insertId, name, category, stock, price, description });
     } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ message: 'Error al crear el producto' });
+      console.error('Error:', error);
+      res.status(500).json({ message: 'Error al crear el producto' });
     }
-})
+  });
+  
+  app.post('/upload-image', upload.single('image'), async (req, res) => {
+    const { productId } = req.body;
+    const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+  
+    if (!imagePath) {
+      return res.status(400).json({ message: 'No se subió ninguna imagen' });
+    }
+  
+    try {
+      const [result] = await pool.query('UPDATE products SET image = ? WHERE id = ?', [imagePath, productId]);
+      res.json({ message: 'Imagen subida y ruta guardada', imagePath });
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ message: 'Error al subir la imagen' });
+    }
+  });
 
 app.get('/products/:id', async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [req.params.id])
