@@ -16,7 +16,7 @@ if (!fs.existsSync(imgDir)) {
 }
 
 const storage = multer.diskStorage({
-    destination: path.join(__dirname, 'public/img'),
+    destination: imgDir,
     filename: function (req, file, cb) {
         let extension = file.originalname.slice(file.originalname.lastIndexOf('.'))
         cb(null, Date.now() + extension)
