@@ -2,12 +2,23 @@ import express from 'express'
 import cors from 'cors'
 import { pool } from './db.js'
 import { PORT } from './config.js'
+import multer from 'multer';
 
 const app = express()
 
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+
+const storage = multer.diskStorage({
+    destination: './public/img',
+    filename: function (req, file, cb) {
+      let extension = file.originalname.slice(file.originalname.lastIndexOf('.'))
+      cb(null, Date.now() + extension)
+    }
+})
+const upload = multer({ storage: storage });
+
 
 app.get('/ping', async (req, res) => {
     const [result] = await pool.query(`SELECT "hello world" as RESULT`)
@@ -20,6 +31,19 @@ app.get('/products', async (req, res) => {
     res.json(rows)
 })
 
+app.post('/products', upload.single('image'), async (req, res) => {
+    const { name, category, stock, price, description } = req.body;
+    const imagePath = req.file ? `/img/${req.file.filename}` : null;
+
+    try {
+        const [result] = await pool.query('INSERT INTO products (name, category, stock, price, description, image) VALUES (?, ?, ?, ?, ?, ?)', [name, category, stock, price, description, imagePath]);
+        res.json({ id: result.insertId, name, category, stock, price, description, image: imagePath });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ message: 'Error al crear el producto' });
+    }
+})
+
 app.get('/products/:id', async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [req.params.id])
     if (rows.length > 0) {
@@ -27,12 +51,6 @@ app.get('/products/:id', async (req, res) => {
     } else {
         res.status(404).json({ message: 'Producto no encontrado' })
     }
-})
-
-app.post('/products', async (req, res) => {
-    const { name, category, stock, price, description, image } = req.body
-    const [result] = await pool.query('INSERT INTO products (name, category, stock, price, description, image) VALUES (?, ?, ?, ?, ?, ?)', [name, category, stock, price, description, image])
-    res.json({ id: result.insertId, name, category, stock, price, description, image })
 })
 
 app.put('/products/:id', async (req, res) => {
