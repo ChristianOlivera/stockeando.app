@@ -7,6 +7,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const imgDir = path.join(__dirname, 'public/img');
+console.log('Imagenes se guardarán en:', imgDir);
+
 if (!fs.existsSync(imgDir)) {
     fs.mkdirSync(imgDir, { recursive: true });
 }
