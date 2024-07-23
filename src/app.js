@@ -3,24 +3,13 @@ import cors from 'cors'
 import { pool } from './db.js'
 import { PORT } from './config.js'
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-
-const uploadDirectory = path.join(__dirname, 'upload');
-if (!fs.existsSync(uploadDirectory)) {
-    fs.mkdirSync(uploadDirectory, { recursive: true });
-}
 
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDirectory);
-    },
-    filename: function (req, file, cb) {
-        let extension = file.originalname.slice(file.originalname.lastIndexOf('.'));
-        cb(null, Date.now() + extension);
-    }
-});
-
+  filename: function (req, file, cb) {
+    let extension = file.originalname.slice(file.originalname.lastIndexOf('.'))
+    cb(null, Date.now() + extension)
+  }
+})
 const upload = multer({ storage: storage });
 
 const app = express()
@@ -32,7 +21,6 @@ app.use(cors({
 }));
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-app.use('/upload', express.static(uploadDirectory))
 
 app.get('/ping', async (req, res) => {
     const [result] = await pool.query(`SELECT "hello world" as RESULT`)
