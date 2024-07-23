@@ -44,7 +44,7 @@ app.post('/products', async (req, res) => {
     }
   });
   
-  app.post('/upload-image', upload.single('image'), async (req, res) => {
+  app.post('/upload', upload.single('image'), async (req, res) => {
     const { productId } = req.body;
     const imagePath = req.file ? `/upload/${req.file.filename}` : null;
   
