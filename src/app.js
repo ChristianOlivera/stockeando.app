@@ -5,60 +5,49 @@ import { PORT } from './config.js'
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-
-const imgDir = path.join(__dirname, 'public/img');
-if (!fs.existsSync(imgDir)) {
-    fs.mkdirSync(imgDir, { recursive: true });
+const uploadDirectory = path.join(__dirname, 'Upload');
+if (!fs.existsSync(uploadDirectory)) {
+    fs.mkdirSync(uploadDirectory, { recursive: true });
 }
 
 const storage = multer.diskStorage({
-    destination: imgDir,
+    destination: function (req, file, cb) {
+        cb(null, uploadDirectory);
+    },
     filename: function (req, file, cb) {
         let extension = file.originalname.slice(file.originalname.lastIndexOf('.'));
         cb(null, Date.now() + extension);
     }
 });
+
 const upload = multer({ storage: storage });
 
-const app = express();
+const app = express()
 
 app.use(cors({
     origin: 'http://localhost:8080',
     methods: 'GET,POST,PUT,DELETE',
     allowedHeaders: 'Content-Type,Authorization'
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use('/upload', express.static(uploadDirectory))
 
 app.get('/ping', async (req, res) => {
-    const [result] = await pool.query(`SELECT "hello world" as RESULT`);
-    res.json(result[0]);
-});
+    const [result] = await pool.query(`SELECT "hello world" as RESULT`)
+    res.json(result[0])
+})
+
 
 app.get('/products', async (req, res) => {
-    const [rows] = await pool.query('SELECT * FROM products');
-    res.json(rows);
-});
+    const [rows] = await pool.query('SELECT * FROM products')
+    res.json(rows)
+})
 
-
-app.post('/upload', upload.single('image'), (req, res) => {
-    if (req.file) {
-        const imagePath = `/img/${req.file.filename}`;
-        res.json({ imagePath });
-    } else {
-        res.status(400).json({ message: 'Error al subir la imagen' });
-    }
-});
-
-
-app.post('/products', async (req, res) => {
-    const { name, category, stock, price, description, imagePath } = req.body;
+app.post('/products', upload.single('image'), async (req, res) => {
+    const { name, category, stock, price, description } = req.body;
+    const imagePath = req.file ? `/img/${req.file.filename}` : null;
 
     try {
         const [result] = await pool.query('INSERT INTO products (name, category, stock, price, description, image) VALUES (?, ?, ?, ?, ?, ?)', [name, category, stock, price, description, imagePath]);
@@ -67,7 +56,7 @@ app.post('/products', async (req, res) => {
         console.error('Error:', error);
         res.status(500).json({ message: 'Error al crear el producto' });
     }
-});
+})
 
 app.get('/products/:id', async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [req.params.id])
