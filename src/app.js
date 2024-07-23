@@ -3,13 +3,14 @@ import cors from 'cors'
 import { pool } from './db.js'
 import { PORT } from './config.js'
 import multer from 'multer';
+import path from 'path';
 
 const storage = multer.diskStorage({
-  destination: './public/img',
-  filename: function (req, file, cb) {
-    let extension = file.originalname.slice(file.originalname.lastIndexOf('.'))
-    cb(null, Date.now() + extension)
-  }
+    destination: path.join(__dirname, 'public/img'),
+    filename: function (req, file, cb) {
+        let extension = file.originalname.slice(file.originalname.lastIndexOf('.'))
+        cb(null, Date.now() + extension)
+    }
 })
 const upload = multer({ storage: storage });
 
@@ -22,6 +23,7 @@ app.use(cors({
 }));
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/ping', async (req, res) => {
     const [result] = await pool.query(`SELECT "hello world" as RESULT`)
