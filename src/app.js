@@ -46,7 +46,7 @@ app.post('/products', async (req, res) => {
   
   app.post('/upload-image', upload.single('image'), async (req, res) => {
     const { productId } = req.body;
-    const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+    const imagePath = req.file ? `/upload/${req.file.filename}` : null;
   
     if (!imagePath) {
       return res.status(400).json({ message: 'No se subió ninguna imagen' });
