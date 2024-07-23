@@ -7,17 +7,6 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-const app = express()
-
-app.use(cors({
-    origin: 'http://localhost:8080',
-    methods: 'GET,POST,PUT,DELETE',
-    allowedHeaders: 'Content-Type,Authorization'
-}));
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
-app.use(express.static(path.join(__dirname, 'public')));
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -35,6 +24,16 @@ const storage = multer.diskStorage({
 })
 const upload = multer({ storage: storage });
 
+const app = express()
+
+app.use(cors({
+    origin: 'http://localhost:8080',
+    methods: 'GET,POST,PUT,DELETE',
+    allowedHeaders: 'Content-Type,Authorization'
+}));
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/ping', async (req, res) => {
     const [result] = await pool.query(`SELECT "hello world" as RESULT`)
