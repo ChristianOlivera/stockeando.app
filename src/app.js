@@ -2,21 +2,6 @@ import express from 'express'
 import cors from 'cors'
 import { pool } from './db.js'
 import { PORT } from './config.js'
-import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const storage = multer.diskStorage({
-    destination: path.join(__dirname, 'uploads'),
-    filename: function (req, file, cb) {
-      const extension = path.extname(file.originalname);
-      cb(null, Date.now() + extension);
-    }
-  });
-const upload = multer({ storage: storage });
 
 const app = express()
 
@@ -27,7 +12,6 @@ app.use(cors({
 }));
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 app.get('/ping', async (req, res) => {
@@ -41,13 +25,12 @@ app.get('/products', async (req, res) => {
     res.json(rows)
 })
 
-app.post('/products', upload.single('image'), async (req, res) => {
+app.post('/products', async (req, res) => {
     const { name, category, stock, price, description } = req.body;
-    const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
     try {
-        const [result] = await pool.query('INSERT INTO products (name, category, stock, price, description, image) VALUES (?, ?, ?, ?, ?, ?)', [name, category, stock, price, description, imagePath]);
-        res.json({ id: result.insertId, name, category, stock, price, description, image: imagePath });
+        const [result] = await pool.query('INSERT INTO products (name, category, stock, price, description) VALUES (?, ?, ?, ?, ?, ?)', [name, category, stock, price, description]);
+        res.json({ id: result.insertId, name, category, stock, price, description });
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ message: 'Error al crear el producto' });
@@ -65,10 +48,10 @@ app.get('/products/:id', async (req, res) => {
 
 app.put('/products/:id', async (req, res) => {
     const { id } = req.params
-    const { name, category, stock, price, description, image } = req.body
-    const [result] = await pool.query('UPDATE products SET name = ?, category = ?, stock = ?, price = ?, description = ?, image = ? WHERE id = ?', [name, category, stock, price, description, image, id])
+    const { name, category, stock, price, description } = req.body
+    const [result] = await pool.query('UPDATE products SET name = ?, category = ?, stock = ?, price = ?, description = ?, WHERE id = ?', [name, category, stock, price, description, id])
     if (result.affectedRows > 0) {
-        res.json({ id, name, category, stock, price, description, image })
+        res.json({ id, name, category, stock, price, description})
     } else {
         res.status(404).json({ message: 'Error al Editar el Producto' })
     }
