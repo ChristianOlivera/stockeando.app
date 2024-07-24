@@ -26,16 +26,16 @@ app.get('/products', async (req, res) => {
 })
 
 app.post('/products', async (req, res) => {
-    const { name, category, stock, price, description } = req.body;
+    const { name, category, stock, price, description, image } = req.body
 
     try {
-        const [result] = await pool.query('INSERT INTO products (name, category, stock, price, description) VALUES (?, ?, ?, ?, ?, ?)', [name, category, stock, price, description]);
-        res.json({ id: result.insertId, name, category, stock, price, description });
+        const [result] = await pool.query('INSERT INTO products (name, category, stock, price, description, image) VALUES (?, ?, ?, ?, ?, ?)', [name, category, stock, price, description, image]);
+        res.json({ id: result.insertId, name, category, stock, price, description, image})
     } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ message: 'Error al crear el producto' });
+        console.error('Error:', error)
+        res.status(500).json({ message: 'Error al crear el producto' })
     }
-});
+})
 
 app.get('/products/:id', async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [req.params.id])
@@ -48,10 +48,10 @@ app.get('/products/:id', async (req, res) => {
 
 app.put('/products/:id', async (req, res) => {
     const { id } = req.params
-    const { name, category, stock, price, description } = req.body
-    const [result] = await pool.query('UPDATE products SET name = ?, category = ?, stock = ?, price = ?, description = ?, WHERE id = ?', [name, category, stock, price, description, id])
+    const { name, category, stock, price, description, image } = req.body
+    const [result] = await pool.query('UPDATE products SET name = ?, category = ?, stock = ?, price = ?, description = ?, image = ? WHERE id = ?', [name, category, stock, price, description, image, id])
     if (result.affectedRows > 0) {
-        res.json({ id, name, category, stock, price, description})
+        res.json({ id, name, category, stock, price, description, image })
     } else {
         res.status(404).json({ message: 'Error al Editar el Producto' })
     }
