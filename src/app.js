@@ -6,13 +6,12 @@ import multer from 'multer';
 import path from 'path';
 
 const storage = multer.diskStorage({
-    destination: path.join(__dirname, 'public/uploads'),
+    destination: path.join(__dirname, 'uploads'),
     filename: function (req, file, cb) {
-        const extension = path.extname(file.originalname);
-        const filename = Date.now() + extension;
-        cb(null, filename);
+      const extension = path.extname(file.originalname);
+      cb(null, Date.now() + extension);
     }
-});
+  });
 const upload = multer({ storage: storage });
 
 const app = express()
@@ -24,7 +23,7 @@ app.use(cors({
 }));
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 app.get('/ping', async (req, res) => {
